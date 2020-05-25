@@ -153,3 +153,80 @@ _ReadDeThi.EndLoop:
 	lw $s1,32($sp)
 	addi $sp,$sp,32
 	jr $ra
+
+_sort_players_descending.loop:
+	#sap xep mang con
+	#truyen tham so cho ham xuat mang
+	sub $a0, $s0, $t0 
+	la $a1, ($s1)
+	#goi ham sap xep mang ccn
+	jal _sort_small_array
+	
+	#khong tang dia chi cua a1 
+	#tang chi so i
+	addi $t0, $t0, 1
+	
+	#kiem tra i < n thi lap
+	blt $t0, $s0, _sort_players_descending.loop
+#cuoi thu tuc
+	#restore
+	lw $ra, ($sp)
+	lw $s0, 4($sp) #luu gia tri n
+	lw $s1, 8($sp) #luu gia tri arr
+	lw $t0, 12($sp) #chay vong lap
+	lw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+
+	#khoi phuc lai stack
+	addi $sp, $sp, 32
+	
+	jr $ra	
+	
+
+_sort_small_array:
+	#dau thu tuc
+	addi $sp, $sp, -32
+	sw $ra, ($sp)
+	sw $s0, 4($sp) #luu gia tri n
+	sw $s1, 8($sp) #luu gia tri arr
+	sw $t0, 12($sp) #chay vong lap
+	sw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	sw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+	
+	#luu tham so $a0,$a1 vao thanh ghi
+	addi $s0, $a0, 0
+	move $s1, $a1
+	
+#than thu tuc
+	#khoi tao vong lap
+	li $t0, 0
+_sort_small_array.loop:
+	#so sanh phan tu hien tai 
+	#load 2 phan tu hien tai
+	lw $t1, ($s1)
+	lw $t2, 4($s1)
+	#neu  a[n] < a[n+1] thi swap
+	blt $t2, $t1, _sort_small_array.not_swap
+	sw $t2, ($s1)
+	sw $t1, 4($s1)
+_sort_small_array.not_swap:
+	
+	#tang dia chi cua $a1
+	addi $s1, $s1, 4
+	#tang chi so i
+	addi $t0, $t0, 1
+	
+	#kiem tra i < n thi lap
+	blt $t0, $s0, _sort_small_array.loop
+#cuoi thu tuc
+	#restore
+	lw $ra, ($sp)
+	lw $s0, 4($sp) #luu gia tri n
+	lw $s1, 8($sp) #luu gia tri arr
+	lw $t0, 12($sp) #chay vong lap
+	lw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	lw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+
+	#khoi phuc lai stack
+	addi $sp, $sp, 32
+	#nhay ve
+	jr $ra				
