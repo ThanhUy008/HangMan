@@ -6,16 +6,20 @@
 	DrawTake5: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       \n|\n|\n "
 	DrawTake6: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       /\n|\n|\n"
 	DrawTake7: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       / \\ \n|\n|\n"
+	endline: .asciiz "\n"
 	TB1: .asciiz "\nEnter n : "
 	fin: .asciiz "dethi.txt"
 	onedethi: .space 1024
 	lengthdethi: .word 1
 	savechar: .byte 1
 	endchar: .byte '*'
+	DrawDeThi: .space 1024
+	
 .text
 	.globl main
 main:
 	
+
 	#ket thuc
 	li $v0,10
 	syscall
@@ -101,9 +105,9 @@ _ReadDeThi:
 		sw $t1,8 ($sp)
 		sw $t2,12 ($sp)
 		sw $t3,16($sp)
-		sw $t3,20($sp)
-		sw $t4,24($sp)
-		sw $s0,26($sp)
+		sw $t4,20($sp)
+		sw $t5,24($sp)
+		sw $s0,28($sp)
 		sw $s1,32($sp)
 		move $t3,$a1 #save  in t0
 		
@@ -128,7 +132,7 @@ _ReadDeThi.InnerLoop:
 	li $a2,1
 	syscall
 	#check if end of file
-	beqz $v0,endloop
+	beqz $v0,_ReadDeThi.EndLoop
 	lb $t0,savechar 
 	lb $t1,endchar
 	beq $t0,$t1,_ReadDeThi.EndLoop
@@ -147,9 +151,9 @@ _ReadDeThi.EndLoop:
 	lw $t1,8 ($sp)
 	lw $t2,12 ($sp)
 	lw $t3,16($sp)
-	lw $t3,20($sp)
-	lw $t4,24($sp)
-	lw $s0,26($sp)
+	lw $t4,20($sp)
+	lw $t5,24($sp)
+	lw $s0,28($sp)
 	lw $s1,32($sp)
 	addi $sp,$sp,32
 	jr $ra
@@ -230,3 +234,81 @@ _sort_small_array.not_swap:
 	addi $sp, $sp, 32
 	#nhay ve
 	jr $ra				
+
+############Draw line
+_DrawWord:
+		addi $sp,$sp,-32
+		sw $ra,0($sp)
+		sw $t0,4($sp)
+		sw $t1,8 ($sp)
+		sw $t2,12 ($sp)
+		sw $t3,16($sp)
+		sw $t4,20($sp)
+		sw $t5,24($sp)
+		sw $s0,28($sp)
+		sw $s1,32($sp)
+		move $t3,$a1 #save random x in t0
+		
+		li $t0,0 #i = 0
+		la $s1,DrawDeThi
+		la $s0,onedethi
+		lw $t4,lengthdethi
+
+		beq $t3,-1,_DrawWord.FirstInit
+		beq $t3,-2,_DrawWord.FullAnwer
+_DrawWord.openword:
+	lb $t2,($s0) #$t2 = onedethi[i]
+	beq $t0,$t3,_DrawWord.loadword #check if i = x
+	
+_DrawWord.afterloadword:
+	addi $t0,$t0,1 #i++
+	addi $s0,$s0,1 #onedethi[i++]
+	addi $s1,$s1,1 #drawdethi[i++]
+	blt $t0,$t4,_DrawWord.openword
+	j _DrawWord.Print
+_DrawWord.loadword:
+	sb $t2,($s1)
+	j _DrawWord.afterloadword
+
+	
+_DrawWord.FirstInit:
+
+	lb $t5,endchar
+	sb $t5,($s1)
+	addi $t0,$t0,1
+	addi $s1,$s1,1
+	blt $t0,$t4,_DrawWord.FirstInit	
+	j _DrawWord.Print
+
+_DrawWord.FullAnwer:
+	lb $t2, ($s0)
+	sb $t2, ($s1)
+	addi $s0,$s0,1
+	addi $s1,$s1,1
+	addi $t0,$t0,1
+	blt $t0,$t4,_DrawWord.FullAnwer
+
+_DrawWord.Print:
+	li $t0,0
+	la $s1,DrawDeThi
+_DrawWord.Print.loop:	
+	lb $a0,($s1)
+	li $v0,11
+	syscall
+	addi $t0,$t0,1
+	addi $s1,$s1,1
+	blt $t0,$t4,_DrawWord.Print.loop
+	li $v0,4
+	la $a0,endline
+	syscall
+		lw $ra,0($sp)
+		lw $t0,4($sp)
+		lw $t1,8 ($sp)
+		lw $t2,12 ($sp)
+		lw $t3,16($sp)
+		lw $t4,20($sp)
+		lw $t5,24($sp)
+		lw $s0,28($sp)
+		lw $s1,32($sp)
+		addi $sp,$sp,32
+		jr $ra
