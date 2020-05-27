@@ -27,6 +27,8 @@
 	arraytennguoichoilength: .space 4000
 	arraytennguoichoiaddress: .space 4000
 	numberofplayer: .word 1
+	curr_player: .space 11 #ten toi da 10 ki tu
+        input_name_player: .asciiz "\n Enter your name:\n"
 .text
 	.globl main
 main:
@@ -547,3 +549,37 @@ _DrawWord.Print.loop:
 		lw $s1,32($sp)
 		addi $sp,$sp,32
 		jr $ra
+
+#--------input_name-------#
+_input_name:
+    
+    li $v0,4	#xuat thong bao
+    la $a0,input_name_player
+    syscall
+    li $v0, 8       	#  input ten nguoi choi
+    la $a0, curr_player  
+    li $a1, 11     
+
+    move $t0, $a0  	 # luu ten vao t0
+    syscall
+
+    jal _strlen              
+    
+    li $v0, 10     	 # the end 
+    syscall
+    
+_strlen:
+	li $t0, 0 	# khoi tao bien dem bang 0
+	li $t2,10 	#ki tu new line
+_strlen.loop:
+	
+	lb $t1, 0($a0) 	  # load ki tu tiep theo vao t1
+	beq $t1,$t2 _strlen.exit #kiem tra ki tu newline
+	beqz $t1,_strlen.exit	  # kiem tra ki tu rong
+	addi $a0, $a0, 1  # tang con tro cua chuoi
+	addi $t0, $t0, 1  # tang bien dem
+	
+	j _strlen.loop 		  # quay lai vong lap
+_strlen.exit:
+	move $v1,$t0
+	jr $ra
