@@ -6,20 +6,32 @@
 	DrawTake5: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       \n|\n|\n "
 	DrawTake6: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       /\n|\n|\n"
 	DrawTake7: .asciiz " _________\n|/       |\n|        O\n|       /|\\ \n|       / \\ \n|\n|\n"
-	endline: .asciiz "\n"
+	
 	TB1: .asciiz "\nEnter n : "
 	fin: .asciiz "dethi.txt"
 	onedethi: .space 1024
 	lengthdethi: .word 1
 	savechar: .byte 1
 	endchar: .byte '*'
+	endline: .byte '\0'
+	charspacing: .byte '-'
 	DrawDeThi: .space 1024
-	
+	temp: .word 1
+	nguoichoi: .asciiz "nguoichoi.txt"
+	arraytennguoichoi: .space 1000
+	onetennguoichoi: .space 10
+	arraydiem: .space 4000
+	arraysolanchoi: .space 100
+	arraytempdiem: .space 100
+	lengthoftemp: .word 1
+	arraytennguoichoilength: .space 4000
+	arraytennguoichoiaddress: .space 4000
+	numberofplayer: .word 1
 .text
 	.globl main
 main:
 	
-
+	
 	#ket thuc
 	li $v0,10
 	syscall
@@ -27,6 +39,228 @@ main:
 
 
 ###########################################Funtion:
+_ReadNguoiChoiFile:
+		addi $sp,$sp,-64
+		sw $ra,0($sp)
+		sw $t0,4($sp)
+		sw $t1,8 ($sp)
+		sw $t2,12 ($sp)
+		sw $t3,16($sp)
+		sw $t4,20($sp)
+		sw $s0,24($sp)
+		sw $s1,28($sp)
+		sw $s2,32($sp)
+		sw $s3,36($sp)
+		sw $s4,40($sp)
+		sw $s5,44($sp)
+		sw $s6,48($sp)
+		sw $t8,52($sp)
+		sw $t9,56($sp)
+		sw $t7,60($sp)
+		sw $t6,64($sp)
+	li   $v0, 13       # system call for open file
+	la   $a0, nguoichoi      # input file name
+	li   $a1, 0        # flag for reading
+	li   $a2, 0        # mode is ignored
+	syscall            # open a file 
+	move $s0, $v0      # save the file descriptor 
+
+	li $t4,0 #count number of player
+	la $s1,arraytennguoichoi
+	la $s2,arraydiem
+	la $s3,arraytennguoichoilength
+	la $s5,arraytennguoichoiaddress
+
+_ReadNguoiChoiFile.OuterLoop:
+	li $t2,0 #count length of name
+	la $s4,onetennguoichoi #temp string
+	sw $s1,($s5)
+_ReadNguoiChoiFile.InnerLoop:
+	move $a0,$s0
+	li $v0,14
+	la $a1,savechar
+	li $a2,1
+	syscall #read 1 byte
+
+	beqz $v0,_ReadNguoiChoiFile.EndLoop #check if eof
+	
+	lb $t1,savechar
+	lb $t3,charspacing
+	beq $t1,$t3,_ReadNguoiChoiFile.EnterScore #check if reach score
+		
+
+	#lw $t3,endchar
+	#beq $t1,$t3,EndInnerLoop #check if end of string name
+	
+	sb $t1,($s4) #if still name, load it into temp string
+	addi $s4,$s4,1 #tempstring[i++]	
+	addi $t2,$t2,1 #count lenght ++
+
+	j _ReadNguoiChoiFile.InnerLoop
+
+
+_ReadNguoiChoiFile.EndInnerLoop:
+	#addi $t2,$t2,1 #for the '\0'
+	sw $t2,($s3) #luu do dai ten nguoi choi
+	
+	addi $s3,$s3,4 #tang dia chi $s3
+	
+	addi $t4,$t4,1 #tang so luong nguoi choi
+	
+	addi $s5,$s5,4	
+	
+	sw $t6,lengthoftemp
+	#  atoi($t7) , length = $t6
+		
+
+	move $a0,$s1
+	la $a1,onetennguoichoi
+	move $a3,$s3
+	move $a2,$t2
+	jal _Loadplayerinplayerlist
+	
+	addi $t2,$t2,1 #for the '/0'
+	#add $s3,$s3,4 #tang dia chi address
+	add $s1,$s1,$t2 #tang dia chi array
+
+	j _ReadNguoiChoiFile.OuterLoop
+_ReadNguoiChoiFile.EndLoop:
+
+	j _ReadNguoiChoiFile.KetThuc
+_ReadNguoiChoiFile.EnterScore:
+##################3#Wait for atoi
+	la $t7,arraytempdiem
+	li $t6,0
+_ReadNguoiChoiFile.EnterScoreLoop:
+	move $a0,$s0
+	li $v0,14
+	la $a1,savechar
+	li $a2,1
+	syscall #read 1 byte
+	
+	#beqz $v0,_ReadNguoiChoiFile.EndInnerLoop #check if eof
+
+	lb $t9,savechar
+	lb $t8,charspacing
+	
+	beq $t9,$t8,_ReadNguoiChoiFile.EnterTryTimes
+	
+	#lb $t8,endchar
+	#beq $t9,$t8,_ReadNguoiChoiFile.EndInnerLoop
+	
+	sb $t9,($t7) 
+	addi $t7,$t7,1
+	addi $t6,$t6,1
+	j _ReadNguoiChoiFile.EnterScoreLoop
+
+_ReadNguoiChoiFile.EnterTryTimes:
+	sw $t6,lengthoftemp
+	#  atoi($t7) , length = $t6
+	la $t7,arraysolanchoi
+	li $t6,0
+_ReadNguoiChoiFile.EnterTryTimesLoop:
+	move $a0,$s0
+	li $v0,14
+	la $a1,savechar
+	li $a2,1
+	syscall #read 1 byte
+	
+	beqz $v0,_ReadNguoiChoiFile.EndInnerLoop #check if eof
+
+	lb $t9,savechar
+	#lb $t8,charspacing
+	
+	#beq $t9,$t8,_ReadNguoiChoiFile.EnterTryTimes
+	
+	lb $t8,endchar
+	beq $t9,$t8,_ReadNguoiChoiFile.EndInnerLoop
+	
+	sb $t9,($t7) 
+	addi $t7,$t7,1
+	addi $t6,$t6,1
+	j _ReadNguoiChoiFile.EnterTryTimesLoop
+
+_ReadNguoiChoiFile.KetThuc:
+
+		sw $t4,numberofplayer
+
+		lw $ra,0($sp)
+		lw $t0,4($sp)
+		lw $t1,8 ($sp)
+		lw $t2,12 ($sp)
+		lw $t3,16($sp)
+		lw $t4,20($sp)
+		lw $s0,24($sp)
+		lw $s1,28($sp)
+		lw $s2,32($sp)
+		lw $s3,36($sp)
+		lw $s4,40($sp)
+		lw $s5,44($sp)
+		lw $s6,48($sp)
+		lw $t8,52($sp)
+		lw $t9,56($sp)
+		lw $t7,60($sp)
+		addi $sp,$sp,60
+		jr $ra
+
+
+
+
+_Loadplayerinplayerlist:
+	
+		addi $sp,$sp,-32
+		sw $ra,0($sp)
+		sw $t0,4($sp)
+		sw $t1,8 ($sp)
+		sw $s0,12 ($sp)
+		sw $s1,16($sp)
+		sw $t2,20($sp)
+		sw $s2,24($sp)
+		sw $t3,28($sp)
+
+		lb $t3,endline
+		move $s0,$a0 #array nguoi choi
+		move $s1,$a1 #temp string
+		move $t1,$a2 #length string
+		#move $s2,$a3 #array address
+		li $t0,0
+		
+		
+_Loadplayerinplayerlist.Loop:
+		lb $t2,($s1)
+		sb $t2,($s0)
+		addi $s1,$s1,1
+		addi $s0,$s0,1
+		addi $t0,$t0,1
+		blt $t0,$t1,_Loadplayerinplayerlist.Loop
+	
+		
+		
+
+		sb $t3,($s0) #add endline
+		addi $s0,$s0,1
+		#sw $t1,($s2) #add address
+		
+		lw $ra,0($sp)
+		lw $t0,4($sp)
+		lw $t1,8 ($sp)
+		lw $s0,12 ($sp)
+		lw $s1,16($sp)
+		lw $t2,20($sp)
+		lw $s2,24($sp)
+		lw $t3,28($sp)
+		
+		addi $sp,$sp,32
+		jr $ra
+
+
+
+
+
+
+
+
+
 #Funtion to draw hang man
 #input : an interger N in $a1 as the number of wrong guess
 #output: draw hangman on the screen
@@ -109,7 +343,7 @@ _ReadDeThi:
 		sw $t5,24($sp)
 		sw $s0,28($sp)
 		sw $s1,32($sp)
-		move $t3,$a1 #save  in t0
+		move $t3,$a1 #save n in t0
 		
 	li   $v0, 13       # system call for open file
 	la   $a0, fin      # input file name
@@ -133,6 +367,7 @@ _ReadDeThi.InnerLoop:
 	syscall
 	#check if end of file
 	beqz $v0,_ReadDeThi.EndLoop
+	#check if end of word
 	lb $t0,savechar 
 	lb $t1,endchar
 	beq $t0,$t1,_ReadDeThi.EndLoop
