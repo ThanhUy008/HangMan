@@ -33,6 +33,11 @@
 	numberofplayer: .word 1
 	curr_player: .space 11 #ten toi da 10 ki tu
         input_name_player: .asciiz "\n Enter your name:\n"
+        messPlayerChoice: .asciiz "\n Nhap 0 de tra loi voi 1 ki tu, 1 de tra loi toan bo\n"
+	messOneChar:	.asciiz "\n Nhap  ki tu ban muon doan\n"
+	messString:	.asciiz "\n Nhap  chuoi ban muon tra loi\n"
+	answByOneChar: .space 2
+	answByString: .space 100
 .text
 	.globl main
 main:
@@ -750,4 +755,43 @@ extract_player.empty:
 	lw $t6, 4($sp)
 	lw $t7, ($sp)
 	addi $sp, $sp, 36
+	jr $ra
+
+#------Input from Player------#
+_input_from_player:
+	li $v0,4
+	la $a0,messPlayerChoice #xuat lua chon cua nguoi choi
+	syscall
+	
+	li $v0,5	#luu gia tri  lua chon
+	syscall
+	move $t0,$v0
+	
+	beqz $t0,_input_one_char #=0  nhay den _input_one_char
+	bgtz $t0,_input_string  #=1  nhay den _input_string
+	
+	li $v0,10
+	syscall
+_input_one_char:
+	li $v0,4
+	la $a0,messOneChar
+	syscall
+	
+	li $v0,8
+	la $a0,answByOneChar #luu ki tu vao answByOneChar
+	li $a1,2
+	syscall
+	
+	jr $ra
+
+_input_string:
+	li $v0,4
+	la $a0,messString
+	syscall
+	
+	li $v0,8
+	la $a0,answByString #luu chuoi vao answByString
+	li $a1,100
+	syscall
+
 	jr $ra
