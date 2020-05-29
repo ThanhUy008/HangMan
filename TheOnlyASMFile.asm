@@ -25,7 +25,8 @@
 	arraytennguoichoi: .space 1000
 	onetennguoichoi: .space 10
 	arraydiem: .space 4000
-	arraysolanchoi: .space 100
+	arraysolanchoi: .space 4000
+	arraystempolanchoi: .space 100
 	arraytempdiem: .space 100
 	lengthoftemp: .word 1
 	arraytennguoichoilength: .space 4000
@@ -120,7 +121,10 @@ _ReadNguoiChoiFile.EndInnerLoop:
 	
 	addi $s5,$s5,4	
 	
-	sw $t6,lengthoftemp
+	la $a0,arraytemplanchoi
+	move $t6,$a1
+	jal str_to_int
+	sw $v0,arraylanchoi
 	#  atoi($t7) , length = $t6
 		
 
@@ -165,9 +169,15 @@ _ReadNguoiChoiFile.EnterScoreLoop:
 	j _ReadNguoiChoiFile.EnterScoreLoop
 
 _ReadNguoiChoiFile.EnterTryTimes:
-	sw $t6,lengthoftemp
+	
 	#  atoi($t7) , length = $t6
-	la $t7,arraysolanchoi
+	la $a0,arraytempdiem
+	move $a1,$t6
+	jal str_to_int
+	
+	sw $v0,arraydiem
+
+	la $t7,arraytempsolanchoi
 	li $t6,0
 _ReadNguoiChoiFile.EnterTryTimesLoop:
 	move $a0,$s0
@@ -759,6 +769,12 @@ extract_player.empty:
 
 #------Input from Player------#
 _input_from_player:
+	
+
+	addi $sp, $sp, -32
+	sw $t0, 0($sp)
+	sw $v0, 4($sp)
+	sw $ra,8($sp)
 	li $v0,4
 	la $a0,messPlayerChoice #xuat lua chon cua nguoi choi
 	syscall
@@ -782,6 +798,11 @@ _input_one_char:
 	li $a1,2
 	syscall
 	
+	lw $t0, 0($sp)
+	lw $v0, 4($sp)
+	lw $ra,8($sp)
+	addi $sp, $sp, 32
+	
 	jr $ra
 
 _input_string:
@@ -793,5 +814,10 @@ _input_string:
 	la $a0,answByString #luu chuoi vao answByString
 	li $a1,100
 	syscall
-
+	
+	lw $t0, 0($sp)
+	lw $v0, 4($sp)
+	lw $ra,8($sp)
+	addi $sp, $sp, 32
+	
 	jr $ra
