@@ -6,6 +6,7 @@
 	mang_address_nguoichoi: .space 4000
 	so_nguoi_choi: .word 0
 	mang_nguoi_choi_length: .word 0
+	length_mang_ten: .word 0
 	DrawTake1: .asciiz "\n _________\n|/       |\n|\n|\n|\n|\n|\t\t"
 	DrawTake2: .asciiz " _________\n|/       |\n|        O\n|\n|\n|\n|\t\t"
 	DrawTake3: .asciiz " _________\n|/       |\n|        O\n|        |\n|\n|\n|\t\t"
@@ -66,25 +67,25 @@ main:
 	# $a0: address of filename variable
 # $a1: address of char array to be stored
 # $v0: array size
-	#la $a0,nguoichoi
-	#la $a1,mang_nguoi_choi
-        #jal read_player
-	#sw $v0,mang_nguoi_choi_length
+	la $a0,nguoichoi
+	la $a1,mang_nguoi_choi
+        jal read_player
+	sw $v0,mang_nguoi_choi_length
 
 # store player infomation from original content to corresponding arrays
 # $a0 address of file content
 # $a1 size of that char array
 # $v0 number of player extracted
-	#la $a0,mang_nguoi_choi
-	#lw $a1,mang_nguoi_choi_length
-	#jal extract_player
-	#sw $v0,so_nguoi_choi
-
+	la $a0,mang_nguoi_choi
+	lw $a1,mang_nguoi_choi_length
+	jal extract_player
+	sw $v0,so_nguoi_choi
+	sw $v1,length_mang_ten
 
 GameStart:
 	
 	jal _input_name
-	lw $v1,curr_player_name_length
+	sw $v1,curr_player_name_length
 
         li $t6,0 #try time
 
@@ -201,69 +202,64 @@ _createFullLength:
 
 GameLoop.EndGame:
 	
+
+	sw $t7,curr_player_score
+	sw $t6,curr_player_try
+	li $a1,7
+	jal _DrawHangMan
+
 	li $v0,4
 	la $a0,TB2
 	syscall
 	
-	#Add curr_player , curr_player_score,curr_player_try in outfile
-	#lw $t2,so_nguoi_choi
-	#li $t1,1
-	#mul $t3,$t1,$t2
-	#la $t4,curr_player
-	#la $s1,mang_address_nguoichoi
-	#la $s2,mang_diem
-	#la $s3,mang_luot_choi
-	#add $s1,$s1,$t3
-	#add $s2,$s2,$t3
-	#add $s3,$s3,$t3
-
-	#sw $t4,($s1)
+	#Add curr_score,curr_try in mang_diem, mang_luot_choi
+	lw $t2,so_nguoi_choi
+	li $t1,4
+	mul $t3,$t1,$t2
+	la $t4,curr_player
+	la $s1,mang_address_nguoichoi
+	la $s2,mang_diem
+	la $s3,mang_luot_choi
+	la $s4,mang_ten
+	add $s1,$s1,$t3
+	add $s2,$s2,$t3
+	add $s3,$s3,$t3
 	
-	#lw $t4,curr_player_score
-	#sw $t4,($s2)
+	lw $t4,curr_player_score
+	sw $t4,($s2)
+	lw $t4,curr_player_try
+	sw $t4,($s3)
 	
-	#lw $t4,curr_player_try
-	#sw $t4,($s3)
-	#addi $t2,$t2,1
-	#a0 = length arr
-	#a1 = array int
-	#a2 = array name address
-	#a3 = array try times
-	#move $a0,$t2
-	#la $a1,mang_diem
-	#la $a2,mang_address_nguoichoi
-	#la $a3,mang_luot_choi
-	#jal _sort_players_descending
-
-#	la $a0,mang_ten
-#	la $a1,mang_diem
-#	la $a2,mang_address_nguoichoi
-#	la $a3,mang_luot_choi
-#		
-
-#	li $t0,0
-#PrintLoop:
-#	li $v0,4
-#	lw $a0,($a0)
-#	syscall
-
+#add curr_name in mang_ten	
 	
-#	li $v0,4
-#	la $a0,charspacing
-#	syscall
+	lw $t3,length_mang_ten
+	add $s4,$s4,$t3
+	addi $s4,$s4,1	
+	sw $s4,($s1) #save new curr_name address in mang_address
+	lw $t3,curr_player_name_length
+	li $t0,0
+loopadd:
+	lb $t2,($t4)
+	sb $t2,($s4)
+	addi $s4,$s4,1
+	addi $t4,$t4,1
+	addi $t0,$t0,1
+	blt $t0,$t3,loopadd
 
-#	li $v0,1
-#	lw $a0,($a1)
-#	syscall
+	#tang so nguoi choi
+	lw $t2,so_nguoi_choi
+	addi $t2,$t2,1
+	sw $t2,so_nguoi_choi
+	#sort
+	move $a0,$t2
+	la $a1,mang_diem
+	la $a2,mang_address_nguoichoi
+	la $a3,mang_luot_choi
+	jal _sort_players_descending
 
-#	li $v0,4
-#	la $a0,endchar
-#	syscall
-
-#	li $v0,1
-#	lw $a0,($a3)
-#	syscall
-	#ket thuc
+	#tTODO : Print first ten name	
+	
+	
 	li $v0,10
 	syscall
 
@@ -1064,9 +1060,11 @@ str_to_int.Loop:
 # $a0 address of file content
 # $a1 size of that char array
 # $v0 number of player extracted
+# $v1 length mang_ten
 extract_player:
-	addi $sp, $sp, -40
-	sw $ra,36($sp)
+	addi $sp, $sp, -44
+	sw $ra,40($sp)
+	sw $t8,36($sp)
 	sw $s1, 32($sp)
 	sw $t0, 28($sp)
 	sw $t1, 24($sp)
@@ -1083,6 +1081,7 @@ extract_player:
 	la $t3, mang_luot_choi
 	la $s1,mang_address_nguoichoi
 	la $t7, 0
+	li $t8,0 #length mang_ten
 	#TODO special case zero string
 	blez $a1, extract_player.empty
 	#move $a0, $t0
@@ -1093,7 +1092,7 @@ extract_player.player:
 	move $t4, $t1
 	#save address
 	
-	sw $t5,($s1)
+	sw $t4,($s1)
 	addi $s1,$s1,4
 
 extract_player.loop_inner:
@@ -1102,10 +1101,12 @@ extract_player.loop_inner:
 	sb $t5, ($t4)
 	addi $t4, $t4, 1
 	addi $t0, $t0, 1
+	addi $t8,$t8,1 #length mang_ten
 	j extract_player.loop_inner
 extract_player.point1:
 	li $t5, 0
 	sb $t5, ($t4)
+	addi $t8,$t8,1 #length mang_ten
 	addi $t1, $t1, 11
 	addi $t0, $t0, 1
 	li $t6, 0
@@ -1144,8 +1145,10 @@ extract_player.done:
 
 extract_player.empty:
 	move $v0, $t7
-	
-	lw $ra, 32($sp)
+	move $v1,$t8
+	lw $ra,40($sp)
+	lw $t8,36($sp)
+	lw $s1, 32($sp)
 	lw $t0, 28($sp)
 	lw $t1, 24($sp)
 	lw $t2, 20($sp)
@@ -1154,7 +1157,7 @@ extract_player.empty:
 	lw $t5, 8($sp)
 	lw $t6, 4($sp)
 	lw $t7, ($sp)
-	addi $sp, $sp, 36
+	addi $sp, $sp, 44
 	jr $ra
 
 # write to file from buffer
