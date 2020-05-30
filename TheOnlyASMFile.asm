@@ -1157,6 +1157,169 @@ extract_player.empty:
 	addi $sp, $sp, 36
 	jr $ra
 
+# write to file from buffer
+# a0: address of output file name
+# a1: buffer address
+write_players:
+	addi $sp, $sp, -12
+	sw $ra, 8 ($sp)
+	sw $t0, 4 ($sp)
+	sw $t1, ($sp)
+
+	move $t0, $a1
+	
+	li $v0, 13
+	#la $a0, fout_name
+	li $a1, 1
+	li $a2, 0
+	syscall
+	move $t1, $v0
+	
+	move $a1, $t0
+	
+	li $v0, 15
+	move $a0, $t1
+	#la $a1, mang_nguoi_choi
+	li $a2, 1000
+	syscall
+	
+	li $v0, 16
+	move $a0, $t1
+	
+	lw $ra, 8 ($sp)
+	lw $t0, 4 ($sp)
+	lw $t1, ($sp)
+	addi $sp, $sp, 12
+	jr $ra
+
+# $a0: int value
+# $a1: address to write to buffer
+# $v0: number of characters
+int_to_str:
+	addi $sp, $sp, -28
+	sw $ra, 24($sp)
+	sw $t0, 20($sp)
+	sw $t1, 16($sp)
+	sw $t2, 12($sp)
+	sw $t3, 8($sp)
+	sw $t4, 4($sp)
+	sw $t5, ($sp)
+	
+	move $t0, $a0
+	li $t1, 10
+	li $t2, '0'
+	li $t5, 0
+int_to_str.load_loop:
+	div $t0, $t1
+	
+	mfhi $t4
+	add $t3, $t2, $t4
+	mflo $t0
+	
+	addi $sp, $sp, -1
+	sb $t3, ($sp)
+	
+	addi $t5, $t5, 1
+	bgtz $t0, int_to_str.load_loop
+	
+	move $v0, $t5
+	
+	move $t2, $a1
+int_to_str.store_loop:
+	lb $t0, ($sp)
+	addi $sp, $sp, 1
+	addi $t5, $t5, -1
+	sb $t0, ($t2)
+	addi $t2, $t2, 1
+	bgtz $t5, int_to_str.store_loop
+	
+	
+	lw $ra, 24($sp)
+	lw $t0, 20($sp)
+	lw $t1, 16($sp)
+	lw $t2, 12($sp)
+	lw $t3, 8($sp)
+	lw $t4, 4($sp)
+	lw $t5, ($sp)
+	addi $sp, $sp, 28
+	jr $ra
+
+# compose characters need to write to a buffer
+# a0: address of buffer to store on
+# a1: number of player to store
+compose_players:
+	addi $sp, $sp, -32
+	sw $ra, 28($sp)
+	sw $t0, 24($sp)
+	sw $t1, 20($sp)
+	sw $t2, 16($sp)
+	sw $t3, 12($sp)
+	sw $t4, 8($sp)
+	sw $t5, 4($sp)
+	sw $t6, ($sp)
+
+	move $t0, $a0
+	move $t1, $a1
+	la $t2, mang_ten
+	la $t3, mang_diem
+	la $t4, mang_luot_choi
+compose_players.write_player:
+	move $t5, $t2
+compose_players.copy:
+	lb $t6, ($t5)
+	blez $t6, compose_players.exit_copy
+	sb $t6, ($t0)
+	
+	addi $t5, $t5, 1
+	addi $t0, $t0, 1
+	j compose_players.copy
+compose_players.exit_copy:
+	addi $t2, $t2, 11
+	li $t6, '-'
+	sb $t6, ($t0)
+	addi $t0, $t0, 1
+	
+	lw $a0, ($t3)
+	move $a1, $t0
+	jal int_to_str
+	add $t0, $t0, $v0 # update pointing address
+	
+	addi $t3, $t3, 4
+	
+	li $t6, '-'
+	sb $t6, ($t0)
+	addi $t0, $t0, 1
+	
+	lw $a0, ($t4)
+	move $a1, $t0
+	jal int_to_str
+	add $t0, $t0, $v0 # update pointing address
+	
+	addi $t4, $t4, 4
+	
+	li $t6, '*'
+	sb $t6, ($t0)
+	addi $t0, $t0, 1
+	
+	addi $t1, $t1, -1
+	bgtz $t1, compose_players.write_player
+	
+	li $t6, 0
+	sb $t6, ($t0)
+	
+	
+	lw $ra, 28($sp)
+	lw $t0, 24($sp)
+	lw $t1, 20($sp)
+	lw $t2, 16($sp)
+	lw $t3, 12($sp)
+	lw $t4, 8($sp)
+	lw $t5, 4($sp)
+	lw $t6, ($sp)
+	addi $sp, $sp, 32
+	
+	jr $ra
+
 #------Input from Player------#
 _input_from_player:
 	
