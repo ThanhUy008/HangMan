@@ -34,7 +34,7 @@
 	DrawDeThi: .space 1024
 	temp: .word 1
 	nguoichoi: .asciiz "nguoichoi.txt"
-	arraytennguoichoi: .space 1000
+	arraytennguoichoi: .space 10000
 	onetennguoichoi: .space 10
 	arraydiem: .space 4000
 	arraysolanchoi: .space 4000
@@ -84,6 +84,8 @@ main:
 	jal extract_player
 	sw $v0,so_nguoi_choi
 	sw $v1,length_mang_ten
+	
+
 
 GameStart:
 	
@@ -260,20 +262,25 @@ loopadd:
 	lw $t2,so_nguoi_choi
 	addi $t2,$t2,1
 	sw $t2,so_nguoi_choi
-	#sort
-	move $a0,$t2
+
+	#copy for sort
+	lw $a0,so_nguoi_choi
 	la $a1,mang_diem
+	la $a2,mang_luot_choi
+	jal _CopyForSort
+	#sort
+	lw $a0,so_nguoi_choi
+	la $a1,arraydiem
 	la $a2,mang_address_nguoichoi
-	la $a3,mang_luot_choi
-	jal _sort_players_descending
+	la $a3,arraysolanchoi
+	jal SapXep
 
 	#tTODO : Print first 10 name	
 	lw $t1,so_nguoi_choi
 	li $t0,0
-	la $a1,mang_diem
+	la $a1,arraydiem
 	la $a2,mang_address_nguoichoi
-	la $a3,mang_luot_choi
-	
+	la $a3,arraysolanchoi
 
 	li $v0,4
 	la $a0,charEndLine
@@ -842,7 +849,7 @@ _sort_nguoichoi_array:
 	sw $ra,44($sp)
 	#luu tham so $a0,$a1 vao thanh ghi
 	addi $s0, $a0, 0
-	addi $s0,$s0,-1
+#	addi $s0,$s0,-1
 	move $s1, $a1 #array score
 	move $s2,$a2 #array name address
 	move $s3,$a3 #array try time
@@ -1612,3 +1619,146 @@ _StrCompare.End:
 		lw $ra,40($sp)
 		addi $sp,$sp,40
 		jr $ra
+
+
+#SORT
+
+SapXep:
+	addi $sp, $sp, -60
+	sw $t8, ($sp)
+	sw $s0, 4($sp) #luu gia tri n
+	sw $s1, 8($sp) #luu gia tri arr
+	sw $t0, 12($sp) #chay vong lap
+	sw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	sw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+	sw $s2,24($sp)
+	sw $s3,28($sp)
+	sw $t3,32($sp)
+	sw $t4,36($sp)
+	sw $t5,40($sp)
+	sw $t6,44($sp)
+	sw $t7,48($sp)
+	sw $t9,52($sp)
+	sw $ra,56($sp)
+#	la $t0, arr_size
+#	lw $t1, ($t0)
+#	la $t0, arr
+	move $t1,$a0  #n
+	move $t0,$a1 #arr_diem
+	move $s2,$a2 #arr_address
+	move $s3,$a3 #arr_try
+	li $t6, 1
+	li $t7, 0
+SapXep_Loop:	lw $t2, ($t0)
+		lw $t3, 4($t0)
+		lw $v0, ($s2)
+		lw $v1, 4($s2)
+		lw $t8, ($s3)
+		lw $t9, 4($s3)
+
+		sub $t5, $t3, $t2
+		bgtz $t5, switch
+		j switch_else
+	switch:	sw $t3, ($t0)
+		sw $t2, 4($t0)
+
+		sw $v1, ($s2)
+		sw $v0, 4($s2)
+		sw $t9, ($s3)
+		sw $t8, 4($s3)
+
+
+		li $t7, 1
+	switch_else:	
+		addi $t0, $t0, 4
+		addi $s2,$s2,4
+		addi $s3,$s3,4
+		addi $t1, $t1, -1
+		beq $t1, 1, restart
+		j no_restart
+	restart:
+		move $t1, $a0
+	#	lw $t1, ($t0)
+	#	la $t0, arr
+		move $t0,$a1
+		move $s2,$a2
+		move $s3,$a3
+
+		move $t6, $t7
+		li $t7, 0
+	no_restart:
+		bne $t6, 0, SapXep_Loop
+		
+	lw $t8, ($sp)
+	lw $s0, 4($sp) #luu gia tri n
+	lw $s1, 8($sp) #luu gia tri arr
+	lw $t0, 12($sp) #chay vong lap
+	lw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	lw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+	lw $s2,24($sp)
+	lw $s3,28($sp)
+	lw $t3,32($sp)
+	lw $t4,36($sp)
+	lw $t5,40($sp)
+	lw $t6,44($sp)
+	lw $t7,48($sp)
+	lw $t9,52($sp)
+	lw $ra,56($sp)
+	addi $sp, $sp,60
+	jr $ra
+
+
+_CopyForSort:
+	addi $sp, $sp, -60
+	sw $t8, ($sp)
+	sw $s0, 4($sp) #luu gia tri n
+	sw $s1, 8($sp) #luu gia tri arr
+	sw $t0, 12($sp) #chay vong lap
+	sw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	sw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+	sw $s2,24($sp)
+	sw $s3,28($sp)
+	sw $t3,32($sp)
+	sw $t4,36($sp)
+	sw $t5,40($sp)
+	sw $t6,44($sp)
+	sw $t7,48($sp)
+	sw $t9,52($sp)
+	sw $ra,56($sp)
+	
+	la $s1,arraydiem
+	la $s2,arraysolanchoi
+	move $t1,$a0  #n
+	move $t0,$a1 #arr_diem
+	move $s3,$a2 #arr_try
+	li $t7, 0
+_Copy.Loop:
+	lw $t5,($t0)
+	sw $t5,($s1)
+	lw $t5,($s3)
+	sw $t5,($s2)
+	addi $t0,$t0,4
+	addi $s1,$s1,4
+	addi $s2,$s2,4
+	addi $s3,$s3,4
+	addi $t7,$t7,1
+	blt $t7,$t1,_Copy.Loop
+	
+
+	lw $t8, ($sp)
+	lw $s0, 4($sp) #luu gia tri n
+	lw $s1, 8($sp) #luu gia tri arr
+	lw $t0, 12($sp) #chay vong lap
+	lw $t1, 16($sp) #thanh ghi tam chua gia tri a[n]
+	lw $t2, 20($sp) #thanh ghi tam chua gia tri a[n+1]
+	lw $s2,24($sp)
+	lw $s3,28($sp)
+	lw $t3,32($sp)
+	lw $t4,36($sp)
+	lw $t5,40($sp)
+	lw $t6,44($sp)
+	lw $t7,48($sp)
+	lw $t9,52($sp)
+	lw $ra,56($sp)
+	addi $sp, $sp,60
+	jr $ra
