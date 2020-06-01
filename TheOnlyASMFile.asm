@@ -7,6 +7,9 @@
 	so_nguoi_choi: .word 0
 	mang_nguoi_choi_length: .word 0
 	length_mang_ten: .word 0
+	charScore: .asciiz " Score : "
+	charTry:  .asciiz " Play time : "
+	charEndLine: .asciiz "\n"
 	DrawTake1: .asciiz "\n _________\n|/       |\n|\n|\n|\n|\n|\t\t"
 	DrawTake2: .asciiz " _________\n|/       |\n|        O\n|\n|\n|\n|\t\t"
 	DrawTake3: .asciiz " _________\n|/       |\n|        O\n|        |\n|\n|\n|\t\t"
@@ -188,7 +191,7 @@ GameLoop.CheckString:
 	sw $v0,arrayNumOfCharExisted
 	li $v0,1
 	sw $v0,arrayNumOfCharExistedLength
-	addi $t2,$t2,1
+	addi $t2,$zero,7
 	blt $t2,7,GameLoop
 	j GameLoop.EndGame
 
@@ -216,7 +219,6 @@ GameLoop.EndGame:
 	lw $t2,so_nguoi_choi
 	li $t1,4
 	mul $t3,$t1,$t2
-	la $t4,curr_player
 	la $s1,mang_address_nguoichoi
 	la $s2,mang_diem
 	la $s3,mang_luot_choi
@@ -232,11 +234,18 @@ GameLoop.EndGame:
 	
 #add curr_name in mang_ten	
 	
-	lw $t3,length_mang_ten
+	lw $t3,so_nguoi_choi
+	li $t0,11
+	mul $t3,$t3,$t0
+	
 	add $s4,$s4,$t3
-	addi $s4,$s4,1	
+	#addi $s4,$s4,1	
+	
 	sw $s4,($s1) #save new curr_name address in mang_address
 	lw $t3,curr_player_name_length
+
+	la $t4,curr_player
+	
 	li $t0,0
 loopadd:
 	lb $t2,($t4)
@@ -245,7 +254,8 @@ loopadd:
 	addi $t4,$t4,1
 	addi $t0,$t0,1
 	blt $t0,$t3,loopadd
-
+	li $t2,0
+	sb $t2,($s4) #add endline
 	#tang so nguoi choi
 	lw $t2,so_nguoi_choi
 	addi $t2,$t2,1
@@ -257,9 +267,60 @@ loopadd:
 	la $a3,mang_luot_choi
 	jal _sort_players_descending
 
-	#tTODO : Print first ten name	
+	#tTODO : Print first 10 name	
+	lw $t1,so_nguoi_choi
+	li $t0,0
+	la $a1,mang_diem
+	la $a2,mang_address_nguoichoi
+	la $a3,mang_luot_choi
+	
+
+	li $v0,4
+	la $a0,charEndLine
+	syscall
+PrintTop10:
+	li $v0,4	
+	lw $a0,($a2)
+	syscall
+	
+	li $v0,4
+	la $a0,charScore
+	syscall
+	
+	li $v0,1
+	lw $a0,($a1)
+	syscall
+	
+	li $v0,4
+	la $a0,charTry
+	syscall
+	
+	li $v0,1
+	lw $a0,($a3)
+	syscall
+	
+	li $v0,4
+	la $a0,charEndLine
+	syscall
+
+	addi $t0,$t0,1
+	addi $a1,$a1,4
+	addi $a2,$a2,4
+	addi $a3,$a3,4
+	blt $t0,$t1,PrintTop10
+
+#Write to file
+
+	la $a0,mang_nguoi_choi
+	lw $a1,so_nguoi_choi
+	jal compose_players
+
+	la $a0,nguoichoi
+	la $a1,mang_nguoi_choi
+	jal write_players
 	
 	
+
 	li $v0,10
 	syscall
 
