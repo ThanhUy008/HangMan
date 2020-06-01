@@ -276,7 +276,7 @@ loopadd:
 	jal SapXep
 
 	#tTODO : Print first 10 name	
-	lw $t1,so_nguoi_choi
+	li $t1,10
 	li $t0,0
 	la $a1,arraydiem
 	la $a2,mang_address_nguoichoi
