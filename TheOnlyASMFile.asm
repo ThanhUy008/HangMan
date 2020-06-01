@@ -1141,7 +1141,11 @@ extract_player.done:
 	addi $t7, $t7, 1
 	addi $t0, $t0, 1
 	lb $t5, ($t0)
-	bgtz $t5, extract_player.player
+	
+	beqz $t5, extract_player.empty
+	beq $t5, ' ', extract_player.empty
+	beq $t5, '\n', extract_player.empty
+	j extract_player.player
 
 extract_player.empty:
 	move $v0, $t7
